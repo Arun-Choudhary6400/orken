@@ -16,6 +16,7 @@ const Trailers = () => {
   const [activeTeaser, setActiveTeaser] = useState(0);
   const xs = useMediaQuery(theme.breakpoints.down("sm"));
   const sm = useMediaQuery(theme.breakpoints.between("sm", "md"));
+  let mm = gsap.matchMedia();
 
   // triangle grid
   const canvasRef = useRef(null);
@@ -90,32 +91,56 @@ const Trailers = () => {
   const charsRef = useRef([]);
 
   useEffect(() => {
-    let sections = gsap.utils.toArray(".card");
-
-    let cardWidth = window.innerWidth * 0.25 + window.innerWidth * 0.5;
-    let endValue = () =>
-      `+=${cardWidth * sections.length + window.innerWidth * 0.5}`;
-
-    let scrollTween = gsap.to(sections, {
-      xPercent: -100 * (sections.length * 2.46),
-      ease: "power1.out",
-      scrollTrigger: {
-        trigger: triggerRef.current,
-        pin: true,
-        scrub: xs ? 0.3 : sm ? 0.2 : 1,
-        end: endValue,
-        invalidateOnRefresh: true,
-        anticipatePin: 1,
-        fastScrollEnd: true,
-        onUpdate: (self) => {
-          let progress = self.progress;
-          let index = Math.floor(progress * sections.length);
-          if (index < sections.length) {
-            setActiveTeaser(index);
-          }
-        },
+    let scrollTween;
+    let endValue;
+    mm.add(
+      {
+        isDesktop: "(min-width: 1200px)",
+        isMdDesktop: "(min-width: 900px) and (max-width: 1200px)",
+        isTablet: "(min-width: 601px) and (max-width: 899px)",
+        isMobile: "(max-width: 600px)",
       },
-    });
+      (context) => {
+        let { isDesktop, isMdDesktop, isTablet, isMobile } = context.conditions;
+
+        let sections = gsap.utils.toArray(".card");
+
+        let cardWidth = window.innerWidth * 0.25 + window.innerWidth * 0.5;
+        endValue = () =>
+          `+=${cardWidth * sections.length + window.innerWidth * 0.5}`;
+
+        scrollTween = gsap.to(sections, {
+          xPercent:
+            -100 *
+            (sections.length * isMobile
+              ? 4.37
+              : isTablet
+              ? 5.2
+              : isMdDesktop
+              ? 7.35
+              : isDesktop
+              ? 7.35
+              : 2.46),
+          ease: "power1.out",
+          scrollTrigger: {
+            trigger: triggerRef.current,
+            pin: true,
+            scrub: 1,
+            end: endValue,
+            invalidateOnRefresh: true,
+            anticipatePin: 1,
+            fastScrollEnd: true,
+            onUpdate: (self) => {
+              let progress = self.progress;
+              let index = Math.floor(progress * sections.length + 0.3);
+              if (index < sections.length) {
+                setActiveTeaser(index);
+              }
+            },
+          },
+        });
+      }
+    );
 
     gsap.to(triangleGridRef.current, {
       xPercent: -10,
@@ -178,199 +203,196 @@ const Trailers = () => {
   }, []);
 
   const videoRef = useRef(null);
-  // useEffect(() => {
-  //   if (videoRef.current) {
-  //     if (activeTeaser) {
-  //       videoRef.current.play();
-  //     } else {
-  //       videoRef.current.pause();
-  //     }
-  //   }
-  // }, [activeTeaser]);
 
   return (
     <>
       <Box
         ref={triggerRef}
+        className="trailers"
         sx={{
           position: "relative",
+          mt: "-100vh",
+          zIndex: 20,
+          inset: "0px auto",
         }}
       >
-        {/* Video section */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            height: "100vh",
-            width: "100vw",
-            zIndex: 0,
-            overflow: "hidden",
-          }}
-        >
-          <video
-            ref={backgroundVideoRef}
-            src={trailersData[activeTeaser]?.src}
-            autoPlay
-            muted
-            playsInline
-            loop
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center",
-            }}
-          />
-        </Box>
-        {/* Triangle grid section */}
-        <Box
-          ref={triangleGridRef}
-          sx={{
-            position: "absolute",
-            overflow: "hidden",
-            top: -10,
-            left: 0,
-            zIndex: 0,
-            height: "100vh",
-            width: { xs: "100vw", md: "112vw" },
-          }}
-        >
-          <canvas ref={canvasRef} />
-        </Box>
-        {/* Card section */}
-        <Box
-          ref={containerRef}
-          sx={{
-            overflow: "hidden",
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "#333",
-            zIndex: "inherit",
-          }}
-        >
+        <Box className="trailer-scaler">
+          {/* Video section */}
           <Box
             sx={{
-              display: "flex",
-              alignItems: "center",
-              width: "300vw",
+              position: "absolute",
+              top: 0,
               height: "100vh",
-              pl: "21.7svw",
+              width: "100vw",
+              zIndex: 0,
+              overflow: "hidden",
+            }}
+          >
+            <video
+              ref={backgroundVideoRef}
+              src={trailersData[activeTeaser]?.src}
+              autoPlay
+              muted
+              playsInline
+              loop
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center",
+              }}
+            />
+          </Box>
+          {/* Triangle grid section */}
+          <Box
+            ref={triangleGridRef}
+            sx={{
+              position: "absolute",
+              overflow: "hidden",
+              top: -10,
+              left: 0,
+              zIndex: 0,
+              height: "100vh",
+              width: { xs: "100vw", md: "112vw" },
+            }}
+          >
+            <canvas ref={canvasRef} />
+          </Box>
+          {/* Card section */}
+          <Box
+            ref={containerRef}
+            sx={{
+              overflow: "hidden",
+              width: "100vw",
+              height: "100vh",
+              backgroundColor: "#333",
+              zIndex: "inherit",
             }}
           >
             <Box
               sx={{
-                color: "#fff",
-                position: "absolute",
-                left: 30,
+                display: "flex",
+                alignItems: "center",
+                width: "300vw",
+                height: "100vh",
+                pl: "21.7svw",
               }}
             >
-              <Typography
-                className="teaserHeading"
+              <Box
                 sx={{
-                  textTransform: "uppercase",
-                  lineHeight: "1em",
-                  width: "fit-content",
+                  color: "#fff",
+                  position: "absolute",
+                  left: {xs: 20, md: 30},
                 }}
               >
-                {teaserHeading?.map((char, index) => (
-                  <Typography
-                    className="char"
-                    key={index}
-                    sx={{
-                      mr: 7,
-                      fontSize: "5.20vw",
-                      fontFamily: "Geo",
-                      userSelect: "none",
-                      display: "inline-block",
-                    }}
-                    component={"span"}
-                    ref={(el) => (charsRef.current[index] = el)}
-                  >
-                    {char}
-                  </Typography>
-                ))}
-              </Typography>
-              <Typography
-                className="NoOfTeasers"
-                sx={{
-                  fontSize: 30,
-                  lineHeight: "1em",
-                  fontFamily: "Geo",
-                  letterSpacing: -3,
-                  mt: -2,
-                  ml: 1.5,
-                  width: "fit-content",
-                  userSelect: "none",
-                }}
-              >
-                0{trailersData.length}
-              </Typography>
-            </Box>
-            {trailersData?.map((item, index) => (
-              <TeaserCard className="card" key={index}>
-                <Box
-                  className="video-box"
+                <Typography
+                  className="teaserHeading"
                   sx={{
-                    height: "50%",
-                    width: "100%",
-                    transition: "padding .3s cubic-bezier(.165,.84,.44,1)",
-                    boxSizing: "border-box",
+                    textTransform: "uppercase",
+                    lineHeight: "1em",
+                    width: "fit-content",
                   }}
                 >
-                  <video
-                    ref={videoRef}
-                    src={item?.src}
-                    autoPlay
-                    muted
-                    playsInline
-                    loop
-                    style={{
-                      height: "100%",
+                  {teaserHeading?.map((char, index) => (
+                    <Typography
+                      className="char"
+                      key={index}
+                      sx={{
+                        mr: {xs: 2.25, md: 7},
+                        fontSize: {xs: "9.375vw", md: "5.20vw"},
+                        fontFamily: "Geo",
+                        userSelect: "none",
+                        display: "inline-block",
+                      }}
+                      component={"span"}
+                      ref={(el) => (charsRef.current[index] = el)}
+                    >
+                      {char}
+                    </Typography>
+                  ))}
+                </Typography>
+                <Typography
+                  className="NoOfTeasers"
+                  sx={{
+                    fontSize: 30,
+                    lineHeight: "1em",
+                    fontFamily: "Geo",
+                    letterSpacing: -3,
+                    mt: -2,
+                    ml: 1.5,
+                    width: "fit-content",
+                    userSelect: "none",
+                  }}
+                >
+                  0{trailersData.length}
+                </Typography>
+              </Box>
+              {trailersData?.map((item, index) => (
+                <TeaserCard className="card" key={index}>
+                  <Box
+                    className="video-box"
+                    sx={{
+                      height: "50%",
                       width: "100%",
-                      objectFit: "cover",
-                      objectPosition: "center",
+                      transition: "padding .3s cubic-bezier(.165,.84,.44,1)",
+                      boxSizing: "border-box",
                     }}
-                  />
-                </Box>
-                <Box
-                  className="content-box"
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    height: "calc(50% - 32px)",
-                    p: 2,
-                    color: "#fff",
-                    transition: "ease 0.2s",
-                  }}
-                >
-                  <Typography
+                  >
+                    <video
+                      ref={videoRef}
+                      src={item?.src}
+                      autoPlay
+                      muted
+                      playsInline
+                      loop
+                      style={{
+                        height: "100%",
+                        width: "100%",
+                        objectFit: "cover",
+                        objectPosition: "center",
+                      }}
+                    />
+                  </Box>
+                  <Box
+                    className="content-box"
                     sx={{
-                      fontSize: "5vw",
-                      lineHeight: ".8em",
-                      fontFamily: "Geo",
-                      textTransform: "uppercase",
-                      wordSpacing: "100vw",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      height: "calc(50% - 32px)",
+                      p: 2,
+                      color: "#fff",
                       transition: "ease 0.2s",
                     }}
                   >
-                    {item?.title}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <CardFooterTypo>{item?.category}</CardFooterTypo>
-                    <BorderTypo />
-                    <CardFooterTypo>{item?.duration}</CardFooterTypo>
-                    <BorderTypo />
-                    <CardFooterTypo>{item?.platform}</CardFooterTypo>
+                    <Typography
+                      sx={{
+                        fontSize: {xs: "13.02vw", sm: "7.81svw", md: "5vw"},
+                        lineHeight: ".8em",
+                        fontFamily: "Geo",
+                        textTransform: "uppercase",
+                        wordSpacing: "100vw",
+                        transition: "ease 0.2s",
+                      }}
+                    >
+                      {item?.title}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <CardFooterTypo>{item?.category}</CardFooterTypo>
+                      <BorderTypo />
+                      <CardFooterTypo>{item?.duration}</CardFooterTypo>
+                      <BorderTypo />
+                      <CardFooterTypo>{item?.platform}</CardFooterTypo>
+                    </Box>
                   </Box>
-                </Box>
-              </TeaserCard>
-            ))}
+                </TeaserCard>
+              ))}
+            </Box>
           </Box>
         </Box>
       </Box>
@@ -425,7 +447,8 @@ const TeaserCard = styled(Box)(({ theme }) => ({
   maxHeight: "70svh",
   minHeight: "50svh",
   marginLeft: "50svw",
-  transition: "padding .3s cubic-bezier(.165,.84,.44,1)",
+  transition: "transform .3s cubic-bezier(.165,.84,.44,1)",
+  cursor: "pointer",
   ":hover": {
     // transform: "scale(1.05) !important",
     backgroundColor: "#ff6b00",
@@ -434,7 +457,8 @@ const TeaserCard = styled(Box)(({ theme }) => ({
     },
   },
   [theme.breakpoints.down("sm")]: {
-    width: "85svw",
+    minWidth: "65svw",
+    minHeight: "60svh",
   },
   [theme.breakpoints.between("sm", "md")]: {
     width: "45svw",
